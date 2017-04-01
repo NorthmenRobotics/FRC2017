@@ -5,7 +5,6 @@ import edu.wpi.first.wpilibj.Jaguar;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.RobotDrive.MotorType;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -20,11 +19,19 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public class Robot extends IterativeRobot {
 	RobotDrive myDrive;
 	Joystick left, right;
-	Jaguar climber = new Jaguar(5);
+	Jaguar climberL = new Jaguar(5);
+	Jaguar climberR = new Jaguar(6);
 	final String defaultAuto = "Default";
+	/*
 	final String customAuto = "My Auto";
+	final String centerAuto = "Center Start";
+	final String rightAuto = "Right Start";
+	final String leftAuto = "Left Start";
+	*/ 
+	final String testAuto = "Testing";
 	String autoSelected;
 	SendableChooser<String> chooser = new SendableChooser<>();
+	//public static Timer timer = new  Timer();
 
 	/**
 	 * This function is run when the robot is first started up and should be
@@ -36,12 +43,17 @@ public class Robot extends IterativeRobot {
 		left = new Joystick(0);
 		right = new Joystick(1);
 		chooser.addDefault("Default Auto", defaultAuto);
-		chooser.addObject("My Auto", customAuto);
+		//chooser.addObject("My Auto", customAuto);
+		//chooser.addObject("Center Start Position", centerAuto); //Comment out next three lines if errors occur
+		//chooser.addObject("Right Start Position", rightAuto);
+		//chooser.addObject("Left Start Position", leftAuto);
+		//chooser.addObject("TEST", testAuto);
 		SmartDashboard.putData("Auto choices", chooser);
 		myDrive.setInvertedMotor(MotorType.kFrontLeft, true);
 		myDrive.setInvertedMotor(MotorType.kRearLeft, true);
 		myDrive.setInvertedMotor(MotorType.kFrontRight, true);
 		myDrive.setInvertedMotor(MotorType.kRearRight, true);
+		//timer.reset();
 	}
 
 	/**
@@ -60,101 +72,176 @@ public class Robot extends IterativeRobot {
 		autoSelected = chooser.getSelected();
 		// autoSelected = SmartDashboard.getString("Auto Selector",
 		// defaultAuto);
-		System.out.println("Auto selected: " + autoSelected);
+		//timer.reset();
 	}
 
 	/**
 	 * This function is called periodically during autonomous
 	 */
+	int autonomousTick = 0; //How many times autonomousPeriodic() has been iterated
 	@Override
 	public void autonomousPeriodic() {
 			switch (autoSelected) {
+			/*
 			case customAuto:
-				myDrive.drive(1.0, 0);
-				Timer.delay(3); //TODO: Set appropriate forward movement duration
-				myDrive.stopMotor();
+				if (autonomousTick < 100) {
+					myDrive.drive(-0.5, -0.1);
+				}
+				if (autonomousTick > 100) {
+					myDrive.stopMotor();
+				}
+				autonomousTick++;
 				break;
+			case centerAuto:
+				System.out.println("INFO: Running center autonomous");
+				if (autonomousTick < 100) {
+					myDrive.drive(-0.5, 0);
+				}
+				if (autonomousTick > 100) {
+					myDrive.stopMotor();
+				}
+				autonomousTick++;
+				break;
+			case rightAuto:
+				System.out.println("INFO: Running right autonomous");
+				if (autonomousTick < 150) {
+					myDrive.drive(-0.5, 0.1); //TODO: Correct curve
+				}
+				if (autonomousTick > 150) {
+					myDrive.stopMotor();
+				}
+				autonomousTick++;
+				break;
+			case leftAuto:
+				System.out.println("INFO: Running left autonomous");
+				if (autonomousTick < 150) {
+					myDrive.drive(-0.5, -0.1); //TODO: Correct curve
+				}
+				if (autonomousTick > 150) {
+					myDrive.stopMotor();
+				}
+				autonomousTick++;
+				break;
+				*/
 			case defaultAuto:
-				myDrive.drive(.5, 0);
-				Timer.delay(2); //TODO: Set appropriate forward movement duration
-				myDrive.stopMotor();
+				System.out.println("WARNING: Running default autonomous");
+				if (autonomousTick < 150) {
+					myDrive.drive(-0.5, 0.0);
+				}
+				if (autonomousTick > 150) {
+					myDrive.stopMotor();
+				}
+				autonomousTick++;
+				break;
+			case testAuto:
+				System.out.println("WARNING: Running test autonomous");
+				if (autonomousTick < 150) {
+					myDrive.drive(-0.5, 0);
+				}
+				if (autonomousTick > 150) {
+					myDrive.stopMotor();
+				}
+				autonomousTick++;
 				break;
 			default:
+				System.out.println("ERROR: Autonomous failed to correctly select a movement sequence.");
 				break;
 			}
 	}
+	
 	public void disabledInit() {
+		autonomousTick = 0;
+	}
+	
+	public void climber(double power) {
+		climberL.set(-power);
+		climberR.set(power);
 	}
 
 	/**
 	 * This function is called periodically during operator control
 	 */
+	
+	int controlScheme = 1;
+	/*
+	 *  KEY:
+	 * 1 : Tank Drive (default)
+	 * 2 : Arcade Drive
+	 * 
+	 */
+	boolean controlCurve = false; //Is squared inputs enabled
+	
 	@Override
 	public void teleopPeriodic() {
 		
-		int controlScheme = 1;
 		
-		while (isOperatorControl() && isEnabled()) {
+		if (isOperatorControl() && isEnabled()) {
 			
 			
 			//Check for control scheme switch...
-			if (right.getRawButton(7)){
-				if (right.getRawButton(9) && !right.getRawButton(11)) {
+			if (left.getRawButton(7)){
+				if (left.getRawButton(9) && !left.getRawButton(11)) {
 					controlScheme = 1;
-				} else if (right.getRawButton(11) && !right.getRawButton(9)) {
+					System.out.println("INFO: Tank Drive selected");
+				} else if (left.getRawButton(11) && !left.getRawButton(9)) {
 					controlScheme = 2;
+					System.out.println("INFO: Arcade Drive selected");
 				}
 			}
 			
+			//Check for control curve switch...
+			if (left.getRawButton(8)) {
+				if (left.getRawButton(9) && !left.getRawButton(11)) {
+					controlCurve = false;
+					System.out.println("INFO: Squared Inputs disabled");
+				} else if (left.getRawButton(11) && !left.getRawButton(9)) {
+					controlCurve = true;
+					System.out.println("INFO: Squared Inputs enabled");
+				}
+			}
 			
 			//Run selected control scheme...
 			switch (controlScheme) {
-			case 1:
-				if (!right.getRawButton(7)) {
+			case 1: //Tank Drive
+				if (!left.getRawButton(7)) {
 					myDrive.tankDrive(left, right);
-					Timer.delay(0.01);
 					
-					if (left.getRawButton(4)) {
-						climber.set(-1.0);
-					} else if (left.getRawButton(3)) {
-						climber.set(-0.35);
-					} else {
-						climber.set(0.0);
-					}	
-				}
-				break;
-			
-			case 2:
-				if (!right.getRawButton(7)) {
-					myDrive.arcadeDrive(right, true);
-					Timer.delay(0.01);
-					
-				    if (left.getRawButton(4)) {
-						climber.set(-1.0);
-					} else if (left.getRawButton(3)) {
-						climber.set(-0.35);
-					} else {
-						climber.set(0.0);
+					if (left.getTrigger()) {
+						climber(1);
+					}
+					else {
+						climber(0);
 					}
 				}
 				break;
-				
-			default:
-				if (!right.getRawButton(7)) {
-					myDrive.tankDrive(left, right);
-					Timer.delay(0.01);
-					
 			
-					if (left.getRawButton(4)) {
-						climber.set(-1.0);
-					} else if (left.getRawButton(3)) {
-						climber.set(-0.35);
-					} else {
-						climber.set(0.0);
-					}	
+			case 2: //Arcade Drive
+				if (!left.getRawButton(7)) {
+					myDrive.arcadeDrive(right, controlCurve);
+					
+					if (right.getTrigger()) {
+						climber(1);
+					}
+					else {
+						climber(0);
+					}
 				}
 				break;
+			
 				
+			default: //Tank Drive (default)
+				if (!left.getRawButton(7)) {
+					myDrive.tankDrive(left, right);
+					
+					if (left.getTrigger()) {
+						climber(1);
+					}
+					else {
+						climber(0);
+					}
+				}
+				System.out.println("WARNING: Teleop is defaulting!");
+				break;
 			}
 		}
 	}
