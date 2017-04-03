@@ -21,17 +21,23 @@ public class Robot extends IterativeRobot {
 	Joystick left, right;
 	Jaguar climberL = new Jaguar(5);
 	Jaguar climberR = new Jaguar(6);
+	
 	final String defaultAuto = "Default";
-	/*
 	final String customAuto = "My Auto";
 	final String centerAuto = "Center Start";
 	final String rightAuto = "Right Start";
 	final String leftAuto = "Left Start";
-	*/ 
 	final String testAuto = "Testing";
 	String autoSelected;
 	SendableChooser<String> chooser = new SendableChooser<>();
-	//public static Timer timer = new  Timer();
+	
+	//QUICK UPDATE BANK
+	float driveTrim = 0; //Finalize when balanced
+	float curveTrim = 0; //Finalize when balanced
+	final float autonomousSpeed = 0.5;
+	final int autonomousDurationA = 100;
+	final int autonomousDurationB = 150;
+	System.out.println("WARNING: You are running an experimental build! Redeploy a stable build before competition!")
 
 	/**
 	 * This function is run when the robot is first started up and should be
@@ -43,17 +49,17 @@ public class Robot extends IterativeRobot {
 		left = new Joystick(0);
 		right = new Joystick(1);
 		chooser.addDefault("Default Auto", defaultAuto);
-		//chooser.addObject("My Auto", customAuto);
-		//chooser.addObject("Center Start Position", centerAuto); //Comment out next three lines if errors occur
-		//chooser.addObject("Right Start Position", rightAuto);
-		//chooser.addObject("Left Start Position", leftAuto);
-		//chooser.addObject("TEST", testAuto);
+		chooser.addObject("My Auto", customAuto);
+		chooser.addObject("Center Start Position", centerAuto);
+		chooser.addObject("Right Start Position", rightAuto);
+		chooser.addObject("Left Start Position", leftAuto);
+		chooser.addObject("TEST", testAuto);
 		SmartDashboard.putData("Auto choices", chooser);
 		myDrive.setInvertedMotor(MotorType.kFrontLeft, true);
 		myDrive.setInvertedMotor(MotorType.kRearLeft, true);
 		myDrive.setInvertedMotor(MotorType.kFrontRight, true);
 		myDrive.setInvertedMotor(MotorType.kRearRight, true);
-		//timer.reset();
+		System.out.println("robotInit() executed!")
 	}
 
 	/**
@@ -72,7 +78,6 @@ public class Robot extends IterativeRobot {
 		autoSelected = chooser.getSelected();
 		// autoSelected = SmartDashboard.getString("Auto Selector",
 		// defaultAuto);
-		//timer.reset();
 	}
 
 	/**
@@ -82,63 +87,62 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void autonomousPeriodic() {
 			switch (autoSelected) {
-			/*
 			case customAuto:
-				if (autonomousTick < 100) {
-					myDrive.drive(-0.5, -0.1);
+				if (autonomousTick < autonomousDurationA) {
+					myDrive.drive(-autonomousSpeed, -0.1);
 				}
-				if (autonomousTick > 100) {
+				if (autonomousTick > autonomousDurationA) {
 					myDrive.stopMotor();
 				}
 				autonomousTick++;
 				break;
 			case centerAuto:
 				System.out.println("INFO: Running center autonomous");
-				if (autonomousTick < 100) {
-					myDrive.drive(-0.5, 0);
+				if (autonomousTick < autonomousDurationA) {
+					myDrive.drive(-autonomousSpeed, 0.0);
 				}
-				if (autonomousTick > 100) {
+				if (autonomousTick > autonomousDurationA) {
 					myDrive.stopMotor();
 				}
 				autonomousTick++;
 				break;
 			case rightAuto:
 				System.out.println("INFO: Running right autonomous");
-				if (autonomousTick < 150) {
-					myDrive.drive(-0.5, 0.1); //TODO: Correct curve
+				if (autonomousTick < autonomousDurationB) {
+					myDrive.drive(-autonomousSpeed, curveTrim); //TODO: Correct curve
 				}
-				if (autonomousTick > 150) {
+				if (autonomousTick > autonomousDurationB) {
 					myDrive.stopMotor();
 				}
 				autonomousTick++;
 				break;
 			case leftAuto:
 				System.out.println("INFO: Running left autonomous");
-				if (autonomousTick < 150) {
-					myDrive.drive(-0.5, -0.1); //TODO: Correct curve
+				if (autonomousTick < autonomousDurationB) {
+					myDrive.drive(-autonomousSpeed, -curveTrim); //TODO: Correct curve
 				}
-				if (autonomousTick > 150) {
+				if (autonomousTick > autonomousDurationB) {
 					myDrive.stopMotor();
 				}
 				autonomousTick++;
 				break;
-				*/
 			case defaultAuto:
 				System.out.println("WARNING: Running default autonomous");
-				if (autonomousTick < 150) {
-					myDrive.drive(-0.5, 0.0);
+				if (autonomousTick < autonomousDurationB) {
+					myDrive.drive(-autonomousSpeed, 0.0);
 				}
-				if (autonomousTick > 150) {
+				if (autonomousTick > autonomousDurationB) {
 					myDrive.stopMotor();
 				}
 				autonomousTick++;
 				break;
 			case testAuto:
 				System.out.println("WARNING: Running test autonomous");
-				if (autonomousTick < 150) {
-					myDrive.drive(-0.5, 0);
+				autonomousVerbose()
+				if (autonomousTick < autonomousDurationB) {
+					myDrive.drive(-autonomousSpeed, driveTrim + curveTrim);
 				}
-				if (autonomousTick > 150) {
+				if (autonomousTick > autonomousDurationB) {
 					myDrive.stopMotor();
 				}
 				autonomousTick++;
@@ -147,6 +151,13 @@ public class Robot extends IterativeRobot {
 				System.out.println("ERROR: Autonomous failed to correctly select a movement sequence.");
 				break;
 			}
+	}
+	
+	public void autonomousVerbose() {
+		System.out.println("Trim: " + driveTrim);
+		System.out.println("Curve: " + curveTrim);
+		System.out.println("Duration: " + autonomousDurationB + " ticks");
+		System.out.println("Current Tick: " + autonomousTick);
 	}
 	
 	public void disabledInit() {
@@ -206,11 +217,20 @@ public class Robot extends IterativeRobot {
 				if (!left.getRawButton(7)) {
 					myDrive.tankDrive(left, right);
 					
+					//climber...
 					if (left.getTrigger()) {
 						climber(1);
 					}
 					else {
 						climber(0);
+					}
+					
+					//autonomous trimming...
+					if (right.getRawButton(7)) { //top left base button to "straighten" left
+						driveTrim += 0.001
+					}
+					if (right.getRawButton(8)) { //top right base button to "straighten" right
+						driveTrim -= 0.001
 					}
 				}
 				break;
